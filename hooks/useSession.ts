@@ -109,8 +109,8 @@ export function useSession() {
   const handleComplete = useCallback(async () => {
     try {
       await stopSession("completed");
-    } catch (err) {
-      console.error("Failed to notify backend of completion:", err);
+    } catch {
+      // Silently ignore - can happen if session already ended (e.g., React Strict Mode double-invoke)
     }
     setSession({ isActive: false });
     setLoading(false);

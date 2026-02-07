@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface CountdownProps {
   endTime: string;
@@ -14,6 +14,12 @@ export function Countdown({
   onComplete,
 }: CountdownProps) {
   const [timeLeft, setTimeLeft] = useState<number>(0);
+  const hasCompletedRef = useRef(false);
+
+  useEffect(() => {
+    // Reset completion flag when endTime changes (new session)
+    hasCompletedRef.current = false;
+  }, [endTime]);
 
   useEffect(() => {
     const target = new Date(endTime).getTime();
@@ -23,7 +29,9 @@ export function Countdown({
       const diff = Math.max(0, target - now);
       setTimeLeft(diff);
 
-      if (diff === 0) {
+      // Only call onComplete once per session
+      if (diff === 0 && !hasCompletedRef.current) {
+        hasCompletedRef.current = true;
         onComplete();
       }
     };
