@@ -27,3 +27,9 @@
 ## Phase 5: Dockerization & Deployment
 - [x] **Dockerfile:** Create a multi-stage build Dockerfile for the Next.js app.
 - [x] **Documentation:** Update README with Docker build/run instructions.
+
+## Phase 6: Refactoring & Enhancements (Current)
+- [x] **Directory Structure:** Move from `src/` to root-level `app/` directory structure.
+- [x] **API Proxy:** Create internal `/api/hia` route to handle CORS and secure key usage.
+- [x] **UI Update:** Implement HH:MM:SS duration input.
+- [x] **Presets Update:** Update presets to 25m, 50m, 1h 30m (90m), and 2h (120m).
