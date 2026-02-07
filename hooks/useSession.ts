@@ -1,0 +1,132 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { startSession, stopSession } from "@/lib/hia";
+import { SessionState } from "@/lib/types";
+
+const STORAGE_KEY = "lock-in-session";
+
+// Helper to safely restore session from localStorage (SSR-safe)
+function getInitialSession(): SessionState {
+  if (typeof window === "undefined") return { isActive: false };
+
+  const savedSession = localStorage.getItem(STORAGE_KEY);
+  if (savedSession) {
+    try {
+      const parsed = JSON.parse(savedSession) as SessionState;
+      if (parsed.isActive && parsed.endTime) {
+        const remaining = new Date(parsed.endTime).getTime() - Date.now();
+        if (remaining > 0) {
+          return parsed;
+        } else {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+    } catch {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }
+  return { isActive: false };
+}
+
+export function useSession() {
+  // Lazy initialization from localStorage (runs once, no cascading render)
+  const [session, setSession] = useState<SessionState>(getInitialSession);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Set mounted flag on client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Persist session to localStorage
+  useEffect(() => {
+    if (session.isActive) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [session]);
+
+  const handleStart = useCallback(
+    async (subject: string, totalSeconds: number) => {
+      if (!subject.trim()) {
+        setError("Subject is required");
+        return false;
+      }
+
+      if (totalSeconds <= 0) {
+        setError("Duration must be greater than 0");
+        return false;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        await startSession(subject, totalSeconds);
+
+        const startTime = new Date();
+        const endTime = new Date(startTime.getTime() + totalSeconds * 1000);
+
+        setSession({
+          isActive: true,
+          subject,
+          startTime: startTime.toISOString(),
+          durationSec: totalSeconds,
+          endTime: endTime.toISOString(),
+        });
+        return true;
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error ? err.message : "Failed to initiate session";
+        setError(message);
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  const handleEndEarly = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await stopSession();
+      setSession({ isActive: false });
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to end session";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleComplete = useCallback(async () => {
+    try {
+      await stopSession("completed");
+    } catch (err) {
+      console.error("Failed to notify backend of completion:", err);
+    }
+    setSession({ isActive: false });
+    setLoading(false);
+    setError(null);
+  }, []);
+
+  const clearError = useCallback(() => setError(null), []);
+
+  return {
+    session,
+    loading,
+    error,
+    mounted,
+    handleStart,
+    handleEndEarly,
+    handleComplete,
+    clearError,
+  };
+}
