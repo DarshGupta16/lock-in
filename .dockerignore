@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+build
+.git
+.env*
+!.env.example
+README.md
+PLAN.md
+GEMINI.md
+Dockerfile
+.dockerignore
