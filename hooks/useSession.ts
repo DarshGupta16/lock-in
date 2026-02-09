@@ -91,7 +91,8 @@ export function useSession() {
     setLoading(true);
     setError(null);
     try {
-      await stopSession();
+      // Pass the blocklist stored in the current session state
+      await stopSession(session.blocklist || []);
       setSession({ isActive: false });
     } catch (err: unknown) {
       const message =
@@ -100,7 +101,7 @@ export function useSession() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [session.blocklist]);
 
   const clearError = useCallback(() => setError(null), []);
 

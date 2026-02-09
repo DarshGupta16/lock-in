@@ -27,11 +27,12 @@ export async function startSession(subject: string, durationSec: number, blockli
   return response.json();
 }
 
-export async function stopSession(reason: string = "manual_end") {
+export async function stopSession(blocklist: string[] = [], reason: string = "manual_end") {
   const payload = {
     event_type: EventType.SESSION_STOP,
     timestamp: new Date().toISOString(),
     reason,
+    blocklist, // Include so secondary webhook on server knows what was blocked
   };
 
   const response = await fetch(PROXY_URL, {
