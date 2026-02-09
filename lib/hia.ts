@@ -2,12 +2,13 @@ import { SessionStart, EventType } from "./types";
 
 const PROXY_URL = "/api/hia";
 
-export async function startSession(subject: string, durationSec: number) {
+export async function startSession(subject: string, durationSec: number, blocklist: string[]) {
   const payload: SessionStart = {
     event_type: EventType.SESSION_START,
     timestamp: new Date().toISOString(),
     subject,
     planned_duration_sec: durationSec,
+    blocklist,
   };
 
   const response = await fetch(PROXY_URL, {

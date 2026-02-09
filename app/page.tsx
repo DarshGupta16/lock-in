@@ -1,7 +1,7 @@
 "use client";
 
 import { Header, Footer, InitiationForm, ActiveSession } from "@/components";
-import { useSession, useDuration, useSubject } from "@/hooks";
+import { useSession, useDuration, useSubject, useBlocklist } from "@/hooks";
 
 export default function LockInPage() {
   const {
@@ -24,9 +24,10 @@ export default function LockInPage() {
     presets,
   } = useDuration();
   const { subject, updateSubject } = useSubject();
+  const { blocklist, addDomain, removeDomain } = useBlocklist();
 
   const onStart = () => {
-    handleStart(subject, getTotalSeconds());
+    handleStart(subject, getTotalSeconds(), blocklist);
   };
 
   if (!mounted) return null;
@@ -48,6 +49,9 @@ export default function LockInPage() {
             onPresetSelect={setPreset}
             onDurationChange={handleChange}
             onDurationBlur={handleBlur}
+            blocklist={blocklist}
+            onAddDomain={addDomain}
+            onRemoveDomain={removeDomain}
             onStart={onStart}
             loading={loading}
             error={error}
@@ -57,6 +61,7 @@ export default function LockInPage() {
             subject={session.subject!}
             endTime={session.endTime!}
             durationSec={session.durationSec!}
+            blocklist={session.blocklist || []}
             loading={loading}
             onStop={handleStop}
           />

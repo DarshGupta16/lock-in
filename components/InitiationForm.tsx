@@ -1,5 +1,6 @@
-import { ChevronRight, AlertCircle } from "lucide-react";
+import { ChevronRight, AlertCircle, X, Plus } from "lucide-react";
 import { DurationPicker } from "./DurationPicker";
+import { useState } from "react";
 import type { DurationPreset } from "@/hooks";
 
 interface InitiationFormProps {
@@ -15,6 +16,10 @@ interface InitiationFormProps {
   onPresetSelect: (h: number, m: number, label: string) => void;
   onDurationChange: (field: "h" | "m" | "s", value: string) => void;
   onDurationBlur: (field: "h" | "m" | "s", value: string) => void;
+  // Blocklist
+  blocklist: string[];
+  onAddDomain: (domain: string) => void;
+  onRemoveDomain: (domain: string) => void;
   // Actions
   onStart: () => void;
   loading: boolean;
@@ -32,13 +37,30 @@ export function InitiationForm({
   onPresetSelect,
   onDurationChange,
   onDurationBlur,
+  blocklist,
+  onAddDomain,
+  onRemoveDomain,
   onStart,
   loading,
   error,
 }: InitiationFormProps) {
+  const [newDomain, setNewDomain] = useState("");
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
-      onStart();
+      if (newDomain.trim()) {
+        onAddDomain(newDomain);
+        setNewDomain("");
+      } else {
+        onStart();
+      }
+    }
+  };
+
+  const handleAddDomain = () => {
+    if (newDomain.trim()) {
+      onAddDomain(newDomain);
+      setNewDomain("");
     }
   };
 
@@ -71,6 +93,45 @@ export function InitiationForm({
         onChange={onDurationChange}
         onBlur={onDurationBlur}
       />
+
+      {/* Blocklist Section */}
+      <div className="space-y-4">
+        <label className="block text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-bold">
+          Restrictions
+        </label>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {blocklist.map((domain) => (
+            <span
+              key={domain}
+              className="group flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 text-xs text-zinc-400 hover:text-white hover:border-zinc-600 transition-colors"
+            >
+              {domain}
+              <button
+                onClick={() => onRemoveDomain(domain)}
+                className="hover:text-red-500 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+        <div className="relative group">
+          <input
+            type="text"
+            placeholder="Add domain to block..."
+            value={newDomain}
+            onChange={(e) => setNewDomain(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="w-full bg-transparent border-b border-zinc-900 py-2 text-sm focus:border-zinc-500 transition-colors placeholder:text-zinc-800"
+          />
+          <button
+            onClick={handleAddDomain}
+            className="absolute right-0 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white p-2"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
 
       {/* Error Message */}
       {error && (

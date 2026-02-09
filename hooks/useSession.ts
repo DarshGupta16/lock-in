@@ -46,7 +46,7 @@ export function useSession() {
   }, [session]);
 
   const handleStart = useCallback(
-    async (subject: string, totalSeconds: number) => {
+    async (subject: string, totalSeconds: number, blocklist: string[]) => {
       if (!subject.trim()) {
         setError("Subject is required");
         return false;
@@ -61,7 +61,7 @@ export function useSession() {
       setError(null);
 
       try {
-        await startSession(subject, totalSeconds);
+        await startSession(subject, totalSeconds, blocklist);
 
         const startTime = new Date();
         const endTime = new Date(startTime.getTime() + totalSeconds * 1000);
@@ -72,6 +72,7 @@ export function useSession() {
           startTime: startTime.toISOString(),
           durationSec: totalSeconds,
           endTime: endTime.toISOString(),
+          blocklist,
         });
         return true;
       } catch (err: unknown) {

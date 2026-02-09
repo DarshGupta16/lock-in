@@ -10,6 +10,7 @@ export const SessionStartSchema = z.object({
   timestamp: z.string().datetime(),
   subject: z.string().min(1, "Subject is required"),
   planned_duration_sec: z.number().positive("Duration must be positive"),
+  blocklist: z.array(z.string()),
 });
 
 export type SessionStart = z.infer<typeof SessionStartSchema>;
@@ -20,4 +21,5 @@ export interface SessionState {
   startTime?: string;
   durationSec?: number;
   endTime?: string;
+  blocklist?: string[];
 }
