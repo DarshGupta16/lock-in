@@ -14,13 +14,8 @@ function getInitialSession(): SessionState {
   if (savedSession) {
     try {
       const parsed = JSON.parse(savedSession) as SessionState;
-      if (parsed.isActive && parsed.endTime) {
-        const remaining = new Date(parsed.endTime).getTime() - Date.now();
-        if (remaining > 0) {
-          return parsed;
-        } else {
-          localStorage.removeItem(STORAGE_KEY);
-        }
+      if (parsed.isActive) {
+        return parsed;
       }
     } catch {
       localStorage.removeItem(STORAGE_KEY);
@@ -91,7 +86,7 @@ export function useSession() {
     [],
   );
 
-  const handleEndEarly = useCallback(async () => {
+  const handleStop = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -106,17 +101,6 @@ export function useSession() {
     }
   }, []);
 
-  const handleComplete = useCallback(async () => {
-    try {
-      await stopSession("completed");
-    } catch {
-      // Silently ignore - can happen if session already ended (e.g., React Strict Mode double-invoke)
-    }
-    setSession({ isActive: false });
-    setLoading(false);
-    setError(null);
-  }, []);
-
   const clearError = useCallback(() => setError(null), []);
 
   return {
@@ -125,8 +109,7 @@ export function useSession() {
     error,
     mounted,
     handleStart,
-    handleEndEarly,
-    handleComplete,
+    handleStop,
     clearError,
   };
 }

@@ -10,8 +10,7 @@ export default function LockInPage() {
     error,
     mounted,
     handleStart,
-    handleEndEarly,
-    handleComplete,
+    handleStop,
   } = useSession();
   const {
     hours,
@@ -59,8 +58,7 @@ export default function LockInPage() {
             endTime={session.endTime!}
             durationSec={session.durationSec!}
             loading={loading}
-            onComplete={handleComplete}
-            onEndEarly={handleEndEarly}
+            onStop={handleStop}
           />
         )}
 

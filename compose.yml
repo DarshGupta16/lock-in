@@ -1,0 +1,34 @@
+services:
+  lock-in:
+    image: spacexdragon7/lock-in:latest
+    container_name: lock-in
+    ports:
+      - "3000:3000"
+    environment:
+      # Public environment variables (exposed to browser)
+      - NEXT_PUBLIC_HIA_API_URL=https://hold-idiot-accountable.onrender.com/api/webhooks/ingest
+      - NEXT_PUBLIC_API_URL=https://hold-idiot-accountable.onrender.com
+
+      # Server-side environment variables (not exposed to browser)
+      - HIA_ACCESS_KEY=00KuwM37SpMU2N0t6L56nu8kZ/UVOYl3OAeudzabw6iDHv05TdfxrbW9QJx7UUmSIW7yumRWdcumyvcU+k7/sg==
+      - HIA_HOMELAB_KEY=00KuwM37SpMU2N0t6L56nu8kZ/UVOYl3OAeudzabw6iDHv05TdfxrbW9QJx7UUmSIW7yumRWdcumyvcU+k7/sg==
+
+      # Next.js runtime configuration
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
