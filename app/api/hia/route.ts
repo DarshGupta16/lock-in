@@ -32,6 +32,45 @@ async function notifySecondaryWebhook(eventType: string, blocklist: string[]) {
   }
 }
 
+export async function GET() {
+  if (!ACCESS_KEY) {
+    return NextResponse.json(
+      { error: "Server configuration error: API key missing" },
+      { status: 500 }
+    );
+  }
+
+  // Use the same base URL as the API_URL but point to the status endpoint
+  // Based on your homelab setup, we use the client API base.
+  const STATUS_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/client/status`;
+
+  try {
+    const response = await fetch(STATUS_URL, {
+      method: "GET",
+      headers: {
+        "x-hia-access-key": ACCESS_KEY,
+      },
+      cache: 'no-store'
+    });
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: `Upstream error: ${response.statusText}` },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error: any) {
+    console.error("Status proxy error:", error);
+    return NextResponse.json(
+      { error: error.message || "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   if (!ACCESS_KEY) {
     console.error("HIA_ACCESS_KEY is not defined in environment variables");

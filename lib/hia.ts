@@ -2,6 +2,19 @@ import { SessionStart, EventType } from "./types";
 
 const PROXY_URL = "/api/hia";
 
+export async function getSessionStatus() {
+  const response = await fetch(PROXY_URL, {
+    method: "GET",
+    cache: 'no-store'
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch status: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
 export async function startSession(subject: string, durationSec: number, blocklist: string[]) {
   const payload: SessionStart = {
     event_type: EventType.SESSION_START,

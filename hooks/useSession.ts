@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { startSession, stopSession } from "@/lib/hia";
+import { startSession, stopSession, getSessionStatus } from "@/lib/hia";
 import { SessionState } from "@/lib/types";
 
 const STORAGE_KEY = "lock-in-session";
@@ -44,6 +44,61 @@ export function useSession() {
       localStorage.removeItem(STORAGE_KEY);
     }
   }, [session]);
+
+  // Sync with global status from server
+  useEffect(() => {
+    if (!mounted) return;
+
+    const syncStatus = async () => {
+      // Don't poll if the tab is hidden to save energy/bandwidth
+      if (document.hidden) return;
+
+      try {
+        const data = await getSessionStatus();
+        const active = data.activeSession;
+
+        if (active) {
+          const startTime = new Date(active.created);
+          const totalSeconds = active.planned_duration_sec;
+          const endTime = new Date(startTime.getTime() + totalSeconds * 1000).toISOString();
+
+          setSession((prev) => {
+            // Only update if something actually changed
+            if (
+              prev.isActive &&
+              prev.subject === active.subject &&
+              prev.endTime === endTime
+            ) {
+              return prev;
+            }
+            return {
+              isActive: true,
+              subject: active.subject,
+              startTime: startTime.toISOString(),
+              durationSec: totalSeconds,
+              endTime,
+              blocklist: data.blocklist || [],
+            };
+          });
+        } else {
+          setSession((prev) => (prev.isActive ? { isActive: false } : prev));
+        }
+      } catch (err) {
+        console.error("Failed to sync session status:", err);
+      }
+    };
+
+    syncStatus();
+    const interval = setInterval(syncStatus, 10000);
+    
+    // Add visibility change listener to sync immediately when returning to tab
+    document.addEventListener("visibilitychange", syncStatus);
+    
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", syncStatus);
+    };
+  }, [mounted]);
 
   const handleStart = useCallback(
     async (subject: string, totalSeconds: number, blocklist: string[]) => {
