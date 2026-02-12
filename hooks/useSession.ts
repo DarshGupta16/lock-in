@@ -49,6 +49,8 @@ export function useSession() {
   useEffect(() => {
     if (!mounted) return;
 
+    let errorCount = 0;
+
     const syncStatus = async () => {
       // Don't poll if the tab is hidden to save energy/bandwidth
       if (document.hidden) return;
@@ -56,6 +58,7 @@ export function useSession() {
       try {
         const data = await getSessionStatus();
         const active = data.activeSession;
+        errorCount = 0; // Reset on success
 
         if (active) {
           const startTime = new Date(active.created);
@@ -84,7 +87,11 @@ export function useSession() {
           setSession((prev) => (prev.isActive ? { isActive: false } : prev));
         }
       } catch (err) {
-        console.error("Failed to sync session status:", err);
+        errorCount++;
+        // Only log every 5th error to reduce noise if server is down
+        if (errorCount === 1 || errorCount % 5 === 0) {
+          console.error(`Failed to sync session status (failure #${errorCount}):`, err);
+        }
       }
     };
 

@@ -32,10 +32,12 @@ export function useBlocklist() {
   }, [blocklist]);
 
   const addDomain = useCallback((domain: string) => {
+    const domainRegex = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i;
+    
     const domainsToAdd = domain
       .split(/\s+/)
       .map((d) => d.trim().toLowerCase())
-      .filter((d) => d.length > 0);
+      .filter((d) => d.length > 0 && domainRegex.test(d));
 
     if (domainsToAdd.length === 0) return;
 

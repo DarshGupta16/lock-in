@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const API_URL = process.env.NEXT_PUBLIC_HIA_API_URL || "https://hold-idiot-accountable.onrender.com/api/webhooks/ingest";
+const HIA_API_BASE = process.env.HIA_API_BASE || "https://hold-idiot-accountable.onrender.com";
+const API_URL = `${HIA_API_BASE}/api/webhooks/ingest`;
 const ACCESS_KEY = process.env.HIA_ACCESS_KEY;
 const SECONDARY_WEBHOOK_URL = process.env.SECONDARY_WEBHOOK_URL;
 
@@ -40,9 +41,8 @@ export async function GET() {
     );
   }
 
-  // Use the same base URL as the API_URL but point to the status endpoint
-  // Based on your homelab setup, we use the client API base.
-  const STATUS_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/client/status`;
+  // Use the status endpoint from the HIA base
+  const STATUS_URL = `${HIA_API_BASE}/api/client/status`;
 
   try {
     const response = await fetch(STATUS_URL, {
