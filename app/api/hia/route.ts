@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const HIA_API_BASE = process.env.HIA_API_BASE || "https://hold-idiot-accountable.onrender.com";
-const API_URL = `${HIA_API_BASE}/api/webhooks/ingest`;
-const ACCESS_KEY = process.env.HIA_ACCESS_KEY;
+// Robust environment variable loading with fallbacks
+const HIA_API_BASE = process.env.HIA_API_BASE || process.env.NEXT_PUBLIC_API_URL || "https://hold-idiot-accountable.onrender.com";
+const API_URL = process.env.HIA_API_URL || process.env.NEXT_PUBLIC_HIA_API_URL || `${HIA_API_BASE.replace(/\/$/, "")}/api/webhooks/ingest`;
+const ACCESS_KEY = process.env.HIA_ACCESS_KEY || process.env.HIA_HOMELAB_KEY;
 const SECONDARY_WEBHOOK_URL = process.env.SECONDARY_WEBHOOK_URL;
 
 async function notifySecondaryWebhook(eventType: string, blocklist: string[]) {
   if (!SECONDARY_WEBHOOK_URL) {
-    console.warn("[Secondary Webhook] Skipping: SECONDARY_WEBHOOK_URL not defined");
     return;
   }
 
@@ -17,17 +17,13 @@ async function notifySecondaryWebhook(eventType: string, blocklist: string[]) {
       blocklist: Array.isArray(blocklist) ? blocklist : []
     };
 
-    console.log(`[Secondary Webhook] Sending POST to: ${SECONDARY_WEBHOOK_URL}`);
-    
-    const response = await fetch(SECONDARY_WEBHOOK_URL, {
+    await fetch(SECONDARY_WEBHOOK_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
     });
-    
-    console.log(`[Secondary Webhook] Response: ${response.status} ${response.statusText}`);
   } catch (error) {
     console.error("[Secondary Webhook] Error:", error);
   }
@@ -35,14 +31,14 @@ async function notifySecondaryWebhook(eventType: string, blocklist: string[]) {
 
 export async function GET() {
   if (!ACCESS_KEY) {
+    console.error("[HIA Proxy] Configuration error: ACCESS_KEY missing");
     return NextResponse.json(
       { error: "Server configuration error: API key missing" },
       { status: 500 }
     );
   }
 
-  // Use the status endpoint from the HIA base
-  const STATUS_URL = `${HIA_API_BASE}/api/client/status`;
+  const STATUS_URL = `${HIA_API_BASE.replace(/\/$/, "")}/api/client/status`;
 
   try {
     const response = await fetch(STATUS_URL, {
@@ -54,6 +50,7 @@ export async function GET() {
     });
 
     if (!response.ok) {
+      console.warn(`[HIA Proxy] Status check failed: ${response.status} ${response.statusText} from ${STATUS_URL}`);
       return NextResponse.json(
         { error: `Upstream error: ${response.statusText}` },
         { status: response.status }
@@ -63,7 +60,7 @@ export async function GET() {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error("Status proxy error:", error);
+    console.error("[HIA Proxy] Status fetch error:", error);
     return NextResponse.json(
       { error: error.message || "Internal Server Error" },
       { status: 500 }
@@ -73,7 +70,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   if (!ACCESS_KEY) {
-    console.error("HIA_ACCESS_KEY is not defined in environment variables");
+    console.error("[HIA Proxy] Configuration error: ACCESS_KEY missing");
     return NextResponse.json(
       { error: "Server configuration error: API key missing" },
       { status: 500 }
@@ -83,7 +80,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // 1. Primary Request to HIA
     const response = await fetch(API_URL, {
       method: "POST",
       headers: {
@@ -95,6 +91,7 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      console.warn(`[HIA Proxy] Ingest failed: ${response.status} from ${API_URL}`);
       return NextResponse.json(
         { error: errorData.error || `Upstream error: ${response.statusText}` },
         { status: response.status }
@@ -103,13 +100,12 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json();
 
-    // 2. Secondary Request (Triggered after HIA success)
-    // Note: body.blocklist comes from SESSION_START or our updated stopSession
+    // Trigger secondary webhook if configured
     await notifySecondaryWebhook(body.event_type, body.blocklist || []);
 
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error("Proxy error:", error);
+    console.error("[HIA Proxy] POST error:", error);
     return NextResponse.json(
       { error: error.message || "Internal Server Error" },
       { status: 500 }

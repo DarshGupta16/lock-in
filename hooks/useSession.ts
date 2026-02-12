@@ -57,13 +57,30 @@ export function useSession() {
 
       try {
         const data = await getSessionStatus();
-        const active = data.activeSession;
+        const active = data?.activeSession;
         errorCount = 0; // Reset on success
 
         if (active) {
-          const startTime = new Date(active.created);
+          // The API returns 'created_at', not 'created'
+          const startTime = new Date(active.created_at);
           const totalSeconds = active.planned_duration_sec;
-          const endTime = new Date(startTime.getTime() + totalSeconds * 1000).toISOString();
+
+          // Robust validation for session data
+          if (isNaN(startTime.getTime()) || typeof totalSeconds !== 'number') {
+            if (errorCount === 1 || errorCount % 10 === 0) {
+              console.warn("[Session Sync] Received invalid session data:", { 
+                created_at: active.created_at, 
+                planned_duration_sec: totalSeconds 
+              });
+            }
+            return;
+          }
+
+          const endTimeDate = new Date(startTime.getTime() + totalSeconds * 1000);
+          if (isNaN(endTimeDate.getTime())) {
+            return;
+          }
+          const endTime = endTimeDate.toISOString();
 
           setSession((prev) => {
             // Only update if something actually changed
@@ -88,9 +105,9 @@ export function useSession() {
         }
       } catch (err) {
         errorCount++;
-        // Only log every 5th error to reduce noise if server is down
-        if (errorCount === 1 || errorCount % 5 === 0) {
-          console.error(`Failed to sync session status (failure #${errorCount}):`, err);
+        // Log the first error immediately for debugging, then every 10th
+        if (errorCount === 1 || errorCount % 10 === 0) {
+          console.error(`[Session Sync] Failed (failure #${errorCount}):`, err);
         }
       }
     };
