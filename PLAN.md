@@ -30,7 +30,7 @@ This plan outlines the surgical migration from npm to Bun to improve build speed
 - [x] **Commit & Push:**
 
 ## Phase 5: Verification & Validation
-- [ ] **Local Build Check:** Run `bun run build` to verify the Next.js standalone output.
-- [ ] **Docker Build Check:** Run `docker build -t lock-in .` to verify the containerization process.
-- [ ] **Runtime Check:** Start the container and verify the HIA API integration and session persistence.
-- [ ] **Commit & Push:** (Any final fixes discovered during verification).
+- [x] **Local Build Check:** Run `bun run build` to verify the Next.js standalone output.
+- [x] **Docker Build Check:** Run `docker build -t lock-in .` to verify the containerization process.
+- [x] **Runtime Check:** Start the container and verify the HIA API integration and session persistence.
+- [x] **Commit & Push:** (Final migration commit)
