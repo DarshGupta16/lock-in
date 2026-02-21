@@ -9,21 +9,18 @@ This plan outlines the surgical migration from npm to Bun to improve build speed
   - `git push -u origin migration/npm-to-bun`
 
 ## Phase 2: Dependency & Lockfile Migration
-- [x] **Generate Bun Lockfile:** Run `bun install` to generate the binary `bun.lockb` file.
+- [x] **Generate Bun Lockfile:** Run `bun install` to generate the text-based `bun.lock` file.
   - `bun install`
 - [x] **Remove npm Lockfile:** Delete the now-redundant `package-lock.json`.
   - `rm package-lock.json`
-- [ ] **Commit & Push:**
-  - `git add .`
-  - `git commit -m "chore: migrate dependencies to bun and generate bun.lockb"`
-  - `git push`
+- [x] **Commit & Push:**
 
 ## Phase 3: Dockerization Update
-- [ ] **Update Dockerfile:** Modify the multi-stage build to use `oven/bun` images.
-  - Replace `node:20-alpine` with `oven/bun:1-alpine` (or `oven/bun:canary-alpine` if required for Next.js 15+ features).
+- [x] **Update Dockerfile:** Modify the multi-stage build to use `oven/bun` images.
+  - Replace `node:20-alpine` with `oven/bun:1-alpine`.
   - Update `deps` stage: Use `bun install --frozen-lockfile`.
   - Update `builder` stage: Use `bun run build`.
-  - Update `runner` stage: Continue using `node:20-alpine` for the standalone output or switch to `oven/bun:1-slim`.
+  - Update `runner` stage: Continue using `node:20-alpine` for the standalone output.
 - [ ] **Update docker-compose:** Ensure any build arguments or image references in `compose.yml` align with the new Dockerfile.
 - [ ] **Commit & Push:**
   - `git add Dockerfile compose.yml`
