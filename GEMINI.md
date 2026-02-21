@@ -18,10 +18,10 @@ Based on the `README.md`, the following commands are used for development:
 
 | Task | Command |
 | :--- | :--- |
-| Install Dependencies | `npm install` |
-| Development Server | `npm run dev` |
-| Production Build | `npm run build` |
-| Start Production | `npm start` |
+| Install Dependencies | `bun install` |
+| Development Server | `bun run dev` |
+| Production Build | `bun run build` |
+| Start Production | `bun start` |
 | Docker Build | `docker build -t lock-in .` |
 
 ## Development Conventions

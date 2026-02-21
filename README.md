@@ -29,9 +29,22 @@ This repository contains a Next.js application designed to be simple, fast, and 
 ## Tech Stack
 
 - **Frontend**: Next.js 15 (App Router), Tailwind CSS.
+- **Runtime**: Bun.
 - **Icons**: Lucide React.
 - **API**: Fetch API with Zod validation.
 - **Deployment**: Docker (Multi-stage build).
+
+---
+
+## Commands
+
+| Task | Command |
+| :--- | :--- |
+| Install Dependencies | `bun install` |
+| Development Server | `bun run dev` |
+| Production Build | `bun run build` |
+| Start Production | `bun start` |
+| Docker Build | `docker build -t lock-in .` |
 
 ---
 
