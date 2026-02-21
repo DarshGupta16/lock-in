@@ -21,19 +21,13 @@ This plan outlines the surgical migration from npm to Bun to improve build speed
   - Update `deps` stage: Use `bun install --frozen-lockfile`.
   - Update `builder` stage: Use `bun run build`.
   - Update `runner` stage: Continue using `node:20-alpine` for the standalone output.
-- [ ] **Update docker-compose:** Ensure any build arguments or image references in `compose.yml` align with the new Dockerfile.
-- [ ] **Commit & Push:**
-  - `git add Dockerfile compose.yml`
-  - `git commit -m "chore: update docker configuration for bun migration"`
-  - `git push`
+- [x] **Update docker-compose:** Ensure any build arguments or image references in `compose.yml` align with the new Dockerfile.
+- [x] **Commit & Push:**
 
 ## Phase 4: Local Environment & Documentation
-- [ ] **Update Scripts:** Audit `package.json` scripts to ensure compatibility with `bun run`.
-- [ ] **Update Documentation:** Revise `README.md` and `GEMINI.md` to replace npm commands with Bun equivalents.
-- [ ] **Commit & Push:**
-  - `git add package.json README.md GEMINI.md`
-  - `git commit -m "docs: update project documentation for bun"`
-  - `git push`
+- [x] **Update Scripts:** Audit `package.json` scripts to ensure compatibility with `bun run`.
+- [x] **Update Documentation:** Revise `README.md` and `GEMINI.md` to replace npm commands with Bun equivalents.
+- [x] **Commit & Push:**
 
 ## Phase 5: Verification & Validation
 - [ ] **Local Build Check:** Run `bun run build` to verify the Next.js standalone output.
