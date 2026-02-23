@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Countdown } from "./Countdown";
 import { Shield } from "lucide-react";
+import { ReasonModal } from "./ReasonModal";
 
 interface ActiveSessionProps {
   subject: string;
@@ -10,7 +11,7 @@ interface ActiveSessionProps {
   durationSec: number;
   blocklist: string[];
   loading: boolean;
-  onStop: () => void;
+  onStop: (reason?: string) => void;
 }
 
 export function ActiveSession({
@@ -22,6 +23,7 @@ export function ActiveSession({
   onStop,
 }: ActiveSessionProps) {
   const [isOvertime, setIsOvertime] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const target = new Date(endTime).getTime();
@@ -33,6 +35,19 @@ export function ActiveSession({
     const interval = setInterval(checkOvertime, 1000);
     return () => clearInterval(interval);
   }, [endTime]);
+
+  const handleStopClick = () => {
+    if (isOvertime) {
+      onStop("Session finished");
+    } else {
+      setIsModalOpen(true);
+    }
+  };
+
+  const handleConfirmStop = (reason: string) => {
+    onStop(reason);
+    setIsModalOpen(false);
+  };
 
   return (
     <div className="space-y-12 animate-in zoom-in-95 duration-500">
@@ -75,7 +90,7 @@ export function ActiveSession({
       {/* End Early Button */}
       <div className="pt-8 flex justify-center">
         <button
-          onClick={onStop}
+          onClick={handleStopClick}
           disabled={loading}
           className={`text-[10px] uppercase tracking-[0.2em] transition-colors underline underline-offset-8 disabled:opacity-50 ${
             isOvertime 
@@ -90,6 +105,13 @@ export function ActiveSession({
               : "End Early (Not Recommended)"}
         </button>
       </div>
+
+      <ReasonModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={handleConfirmStop}
+        loading={loading}
+      />
     </div>
   );
 }

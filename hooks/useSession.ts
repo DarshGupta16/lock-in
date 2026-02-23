@@ -166,12 +166,12 @@ export function useSession() {
     [],
   );
 
-  const handleStop = useCallback(async () => {
+  const handleStop = useCallback(async (reason?: string) => {
     setLoading(true);
     setError(null);
     try {
       // Pass the blocklist stored in the current session state
-      await stopSession(session.blocklist || []);
+      await stopSession(session.blocklist || [], reason);
       setSession({ isActive: false });
     } catch (err: unknown) {
       const message =
