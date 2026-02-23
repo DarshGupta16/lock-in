@@ -61,14 +61,15 @@ export function useSession() {
         errorCount = 0; // Reset on success
 
         if (active) {
-          // The API returns 'created_at', not 'created'
-          const startTime = new Date(active.created_at);
+          // Use 'started_at' (preserved across redeploys) instead of 'created_at' (DB record time)
+          const startTime = new Date(active.started_at || active.created_at);
           const totalSeconds = active.planned_duration_sec;
 
           // Robust validation for session data
           if (isNaN(startTime.getTime()) || typeof totalSeconds !== 'number') {
             if (errorCount === 1 || errorCount % 10 === 0) {
               console.warn("[Session Sync] Received invalid session data:", { 
+                started_at: active.started_at,
                 created_at: active.created_at, 
                 planned_duration_sec: totalSeconds 
               });
