@@ -1,4 +1,4 @@
-import { SessionStart, EventType } from "./types";
+import { SessionStart, EventType, BreakStart } from "./types";
 
 const PROXY_URL = "/api/hia";
 
@@ -59,6 +59,60 @@ export async function stopSession(blocklist: string[] = [], reason: string = "ma
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.error || `Failed to stop session: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function startBreak(
+  durationSec: number,
+  nextSession: { subject: string; durationSec: number; blocklist: string[] }
+) {
+  const payload: BreakStart = {
+    event_type: EventType.BREAK_START,
+    timestamp: new Date().toISOString(),
+    duration_sec: durationSec,
+    next_session: {
+      subject: nextSession.subject,
+      planned_duration_sec: nextSession.durationSec,
+      blocklist: nextSession.blocklist,
+    },
+  };
+
+  const response = await fetch(PROXY_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to start break: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function stopBreak(reason: string = "manual_stop") {
+  const payload = {
+    event_type: EventType.BREAK_STOP,
+    timestamp: new Date().toISOString(),
+    reason,
+  };
+
+  const response = await fetch(PROXY_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to stop break: ${response.statusText}`);
   }
 
   return response.json();
