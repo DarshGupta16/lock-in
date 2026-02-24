@@ -106,8 +106,25 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json();
 
+    // Normalize event for secondary webhook (e.g. n8n)
+    // We want n8n to see 'SESSION_START' whenever we need to start blocking
+    // and 'SESSION_STOP' whenever we need to stop blocking.
+    let webhookEvent = body.event_type;
+    let webhookBlocklist = body.blocklist || [];
+
+    if (body.event_type === "BREAK_SKIP") {
+      webhookEvent = "SESSION_START";
+    } else if (
+      body.event_type === "BREAK_START" || 
+      body.event_type === "BREAK_STOP" || 
+      body.event_type === "SESSION_STOP"
+    ) {
+      webhookEvent = "SESSION_STOP";
+      webhookBlocklist = []; // Explicitly empty to signal unblocking
+    }
+
     // Trigger secondary webhook if configured
-    await notifySecondaryWebhook(body.event_type, body.blocklist || []);
+    await notifySecondaryWebhook(webhookEvent, webhookBlocklist);
 
     return NextResponse.json(data);
   } catch (error: any) {

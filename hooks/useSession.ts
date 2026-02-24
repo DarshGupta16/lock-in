@@ -84,6 +84,8 @@ export function useSession() {
           }
           const endTime = endTimeDate.toISOString();
 
+          const currentBlocklist = data.blocklist || active.blocklist || [];
+
           setSession((prev) => {
             // Only update if something actually changed
             if (
@@ -97,14 +99,17 @@ export function useSession() {
             // Check if we transitioned from BREAK to FOCUSING
             if (prev.status === 'BREAK') {
               // Trigger blocklist sync for the new session
-              fetch('/api/hia', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                  event_type: 'SYNC_BLOCKLIST', 
-                  blocklist: data.blocklist || [] 
-                })
-              }).catch(console.error);
+              // We do this in a microtask to ensure it's outside the updater
+              Promise.resolve().then(() => {
+                fetch('/api/hia', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ 
+                    event_type: 'SYNC_BLOCKLIST', 
+                    blocklist: currentBlocklist
+                  })
+                }).catch(console.error);
+              });
             }
 
             return {
@@ -114,7 +119,7 @@ export function useSession() {
               startTime: startTime.toISOString(),
               durationSec: totalSeconds,
               endTime,
-              blocklist: data.blocklist || [],
+              blocklist: currentBlocklist,
             };
           });
         } else if (activeBreak) {
