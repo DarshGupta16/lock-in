@@ -1,6 +1,6 @@
 "use client";
 
-import { Header, Footer, InitiationForm, ActiveSession } from "@/components";
+import { Header, Footer, InitiationForm, ActiveSession, BreakSession } from "@/components";
 import { useSession, useDuration, useSubject, useBlocklist } from "@/hooks";
 
 export default function LockInPage() {
@@ -11,6 +11,8 @@ export default function LockInPage() {
     mounted,
     handleStart,
     handleStop,
+    handleStartBreak,
+    handleStopBreak,
   } = useSession();
   const {
     hours,
@@ -30,14 +32,18 @@ export default function LockInPage() {
     handleStart(subject, getTotalSeconds(), blocklist);
   };
 
+  const onStartBreak = (breakSec: number) => {
+    handleStartBreak(breakSec, subject, getTotalSeconds(), blocklist);
+  };
+
   if (!mounted) return null;
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-black text-white font-mono">
       <div className="w-full max-w-md space-y-12">
-        <Header isActive={session.isActive} />
+        <Header status={session.status} />
 
-        {!session.isActive ? (
+        {session.status === 'IDLE' && (
           <InitiationForm
             subject={subject}
             onSubjectChange={updateSubject}
@@ -53,10 +59,13 @@ export default function LockInPage() {
             onAddDomain={addDomain}
             onRemoveDomain={removeDomain}
             onStart={onStart}
+            onStartBreak={onStartBreak}
             loading={loading}
             error={error}
           />
-        ) : (
+        )}
+
+        {session.status === 'FOCUSING' && (
           <ActiveSession
             subject={session.subject!}
             endTime={session.endTime!}
@@ -64,6 +73,16 @@ export default function LockInPage() {
             blocklist={session.blocklist || []}
             loading={loading}
             onStop={handleStop}
+          />
+        )}
+
+        {session.status === 'BREAK' && (
+          <BreakSession
+            nextSubject={session.nextSession?.subject || "Next Session"}
+            endTime={session.endTime!}
+            durationSec={session.durationSec!}
+            loading={loading}
+            onSkip={handleStopBreak}
           />
         )}
 

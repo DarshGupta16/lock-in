@@ -1,10 +1,13 @@
 import { Lock } from "lucide-react";
 
 interface HeaderProps {
-  isActive: boolean;
+  status: 'IDLE' | 'FOCUSING' | 'BREAK';
 }
 
-export function Header({ isActive }: HeaderProps) {
+export function Header({ status }: HeaderProps) {
+  const isLocked = status === 'FOCUSING';
+  const isBreak = status === 'BREAK';
+
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
@@ -13,9 +16,14 @@ export function Header({ isActive }: HeaderProps) {
           Lock In
         </h1>
       </div>
-      {isActive && (
+      {isLocked && (
         <div className="px-3 py-1 bg-white text-black text-xs font-bold uppercase tracking-widest rounded-full animate-pulse">
           Locked
+        </div>
+      )}
+      {isBreak && (
+        <div className="px-3 py-1 bg-indigo-500 text-white text-xs font-bold uppercase tracking-widest rounded-full animate-pulse">
+          On Break
         </div>
       )}
     </div>
