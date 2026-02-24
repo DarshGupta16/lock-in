@@ -1,35 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { 
+  ACCESS_KEY, 
+  STATUS_URL, 
+  API_URL, 
+  notifySecondaryWebhook, 
+  getWebhookEventForType 
+} from "@/lib/hia-proxy-utils";
 
-// Robust environment variable loading with fallbacks
-const HIA_API_BASE = process.env.HIA_API_BASE || process.env.NEXT_PUBLIC_API_URL || "https://hold-idiot-accountable.onrender.com";
-const API_URL = process.env.HIA_API_URL || process.env.NEXT_PUBLIC_HIA_API_URL || `${HIA_API_BASE.replace(/\/$/, "")}/api/webhooks/ingest`;
-const ACCESS_KEY = process.env.HIA_ACCESS_KEY || process.env.HIA_HOMELAB_KEY;
-const SECONDARY_WEBHOOK_URL = process.env.SECONDARY_WEBHOOK_URL;
-
-async function notifySecondaryWebhook(eventType: string, blocklist: string[]) {
-  if (!SECONDARY_WEBHOOK_URL) {
-    return;
-  }
-
-  try {
-    const payload = {
-      event: eventType,
-      blocklist: Array.isArray(blocklist) ? blocklist : []
-    };
-
-    await fetch(SECONDARY_WEBHOOK_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-  } catch (error) {
-    console.error("[Secondary Webhook] Error:", error);
-  }
-}
-
-export async function GET() {
+function checkAccessKey() {
   if (!ACCESS_KEY) {
     console.error("[HIA Proxy] Configuration error: ACCESS_KEY missing");
     return NextResponse.json(
@@ -37,20 +15,22 @@ export async function GET() {
       { status: 500 }
     );
   }
+  return null;
+}
 
-  const STATUS_URL = `${HIA_API_BASE.replace(/\/$/, "")}/api/client/status`;
+export async function GET() {
+  const configError = checkAccessKey();
+  if (configError) return configError;
 
   try {
     const response = await fetch(STATUS_URL, {
       method: "GET",
-      headers: {
-        "x-hia-access-key": ACCESS_KEY,
-      },
+      headers: { "x-hia-access-key": ACCESS_KEY! },
       cache: 'no-store'
     });
 
     if (!response.ok) {
-      console.warn(`[HIA Proxy] Status check failed: ${response.status} ${response.statusText} from ${STATUS_URL}`);
+      console.warn(`[HIA Proxy] Status check failed: ${response.status} from ${STATUS_URL}`);
       return NextResponse.json(
         { error: `Upstream error: ${response.statusText}` },
         { status: response.status }
@@ -69,18 +49,13 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  if (!ACCESS_KEY) {
-    console.error("[HIA Proxy] Configuration error: ACCESS_KEY missing");
-    return NextResponse.json(
-      { error: "Server configuration error: API key missing" },
-      { status: 500 }
-    );
-  }
+  const configError = checkAccessKey();
+  if (configError) return configError;
 
   try {
     const body = await request.json();
 
-    // Client explicitly requesting blocklist sync (e.g. on automatic transition)
+    // Client explicitly requesting blocklist sync
     if (body.event_type === "SYNC_BLOCKLIST") {
       await notifySecondaryWebhook("SESSION_START", body.blocklist || []);
       return NextResponse.json({ success: true, processed_event: "SYNC_BLOCKLIST" });
@@ -90,7 +65,7 @@ export async function POST(request: NextRequest) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-hia-access-key": ACCESS_KEY,
+        "x-hia-access-key": ACCESS_KEY!,
       },
       body: JSON.stringify(body),
     });
@@ -106,25 +81,11 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json();
 
-    // Normalize event for secondary webhook (e.g. n8n)
-    // We want n8n to see 'SESSION_START' whenever we need to start blocking
-    // and 'SESSION_STOP' whenever we need to stop blocking.
-    let webhookEvent = body.event_type;
-    let webhookBlocklist = body.blocklist || [];
+    // Determine normalized event for secondary webhook (e.g. n8n)
+    const { event, isStopping } = getWebhookEventForType(body.event_type);
+    const webhookBlocklist = isStopping ? [] : (body.blocklist || []);
 
-    if (body.event_type === "BREAK_SKIP") {
-      webhookEvent = "SESSION_START";
-    } else if (
-      body.event_type === "BREAK_START" || 
-      body.event_type === "BREAK_STOP" || 
-      body.event_type === "SESSION_STOP"
-    ) {
-      webhookEvent = "SESSION_STOP";
-      webhookBlocklist = []; // Explicitly empty to signal unblocking
-    }
-
-    // Trigger secondary webhook if configured
-    await notifySecondaryWebhook(webhookEvent, webhookBlocklist);
+    await notifySecondaryWebhook(event, webhookBlocklist);
 
     return NextResponse.json(data);
   } catch (error: any) {

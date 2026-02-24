@@ -1,6 +1,7 @@
-import { ChevronRight, AlertCircle, X, Plus } from "lucide-react";
+import { ChevronRight, AlertCircle } from "lucide-react";
 import { DurationPicker } from "./DurationPicker";
-import { useState } from "react";
+import { BlocklistInput } from "./BlocklistInput";
+import { BreakSelector } from "./BreakSelector";
 import type { DurationPreset } from "@/hooks";
 
 interface InitiationFormProps {
@@ -46,26 +47,9 @@ export function InitiationForm({
   loading,
   error,
 }: InitiationFormProps) {
-  const [newDomain, setNewDomain] = useState("");
-  const [breakDuration, setBreakDuration] = useState(10); // Default 10 mins
-  const [isCustomBreak, setIsCustomBreak] = useState(false);
-  const [customBreak, setCustomBreak] = useState("10");
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
-      if (newDomain.trim()) {
-        onAddDomain(newDomain);
-        setNewDomain("");
-      } else {
-        onStart();
-      }
-    }
-  };
-
-  const handleAddDomain = () => {
-    if (newDomain.trim()) {
-      onAddDomain(newDomain);
-      setNewDomain("");
+      onStart();
     }
   };
 
@@ -100,43 +84,12 @@ export function InitiationForm({
       />
 
       {/* Blocklist Section */}
-      <div className="space-y-4">
-        <label className="block text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-bold">
-          Restrictions
-        </label>
-        <div className="flex flex-wrap gap-2 mb-4">
-          {blocklist.map((domain) => (
-            <span
-              key={domain}
-              className="group flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 text-xs text-zinc-400 hover:text-white hover:border-zinc-600 transition-colors"
-            >
-              {domain}
-              <button
-                onClick={() => onRemoveDomain(domain)}
-                className="hover:text-red-500 transition-colors"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          ))}
-        </div>
-        <div className="relative group">
-          <input
-            type="text"
-            placeholder="Add domain to block..."
-            value={newDomain}
-            onChange={(e) => setNewDomain(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="w-full bg-transparent border-b border-zinc-900 py-2 text-sm focus:border-zinc-500 transition-colors placeholder:text-zinc-800"
-          />
-          <button
-            onClick={handleAddDomain}
-            className="absolute right-0 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white p-2"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+      <BlocklistInput
+        blocklist={blocklist}
+        onAddDomain={onAddDomain}
+        onRemoveDomain={onRemoveDomain}
+        onEnterPressed={onStart}
+      />
 
       {/* Error Message */}
       {error && (
@@ -148,7 +101,6 @@ export function InitiationForm({
 
       {/* Action Buttons */}
       <div className="space-y-4">
-        {/* Start Button */}
         <button
           onClick={onStart}
           disabled={loading || !subject.trim()}
@@ -164,65 +116,10 @@ export function InitiationForm({
           )}
         </button>
 
-        {/* Break Selector and Button */}
-        <div className="flex gap-2">
-          <div className="flex-1 flex bg-zinc-900 border border-zinc-800">
-            {!isCustomBreak ? (
-              <>
-                {[5, 10, 15].map((mins) => (
-                  <button
-                    key={mins}
-                    onClick={() => setBreakDuration(mins)}
-                    className={`flex-1 py-3 text-[10px] font-bold transition-colors ${
-                      breakDuration === mins 
-                        ? "text-white bg-zinc-800" 
-                        : "text-zinc-500 hover:text-zinc-300"
-                    }`}
-                  >
-                    {mins}m
-                  </button>
-                ))}
-                <button
-                  onClick={() => setIsCustomBreak(true)}
-                  className="flex-1 py-3 text-[10px] font-bold text-zinc-500 hover:text-zinc-300 transition-colors"
-                >
-                  ...
-                </button>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center px-2 gap-2">
-                <input
-                  autoFocus
-                  type="text"
-                  value={customBreak}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/\D/g, "");
-                    setCustomBreak(val);
-                  }}
-                  className="w-full bg-transparent text-[10px] font-bold text-white outline-none text-center"
-                  placeholder="MINS"
-                />
-                <button 
-                  onClick={() => setIsCustomBreak(false)}
-                  className="text-zinc-600 hover:text-white transition-colors"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            )}
-          </div>
-          <button
-            onClick={() => {
-              const duration = isCustomBreak ? parseInt(customBreak) || 5 : breakDuration;
-              onStartBreak(duration * 60);
-            }}
-            disabled={loading || !subject.trim()}
-            className="flex-[2] py-3 border border-zinc-800 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 hover:text-white hover:border-zinc-600 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            Take a Break First
-            <ChevronRight className="w-3 h-3" />
-          </button>
-        </div>
+        <BreakSelector 
+          onStartBreak={onStartBreak} 
+          disabled={loading || !subject.trim()} 
+        />
       </div>
     </div>
   );
