@@ -13,6 +13,7 @@ export default function LockInPage() {
     handleStop,
     handleStartBreak,
     handleStopBreak,
+    handleSkipBreak,
   } = useSession();
   const {
     hours,
@@ -82,7 +83,8 @@ export default function LockInPage() {
             endTime={session.endTime!}
             durationSec={session.durationSec!}
             loading={loading}
-            onSkip={handleStopBreak}
+            onSkip={handleSkipBreak}
+            onStop={handleStopBreak}
           />
         )}
 

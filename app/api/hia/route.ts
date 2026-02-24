@@ -80,6 +80,12 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
+    // Client explicitly requesting blocklist sync (e.g. on automatic transition)
+    if (body.event_type === "SYNC_BLOCKLIST") {
+      await notifySecondaryWebhook("SESSION_START", body.blocklist || []);
+      return NextResponse.json({ success: true, processed_event: "SYNC_BLOCKLIST" });
+    }
+
     const response = await fetch(API_URL, {
       method: "POST",
       headers: {

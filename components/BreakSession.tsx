@@ -10,7 +10,8 @@ interface BreakSessionProps {
   endTime: string;
   durationSec: number;
   loading: boolean;
-  onSkip: (reason?: string) => void;
+  onSkip: () => void;
+  onStop: (reason: string) => void;
 }
 
 export function BreakSession({
@@ -19,6 +20,7 @@ export function BreakSession({
   durationSec,
   loading,
   onSkip,
+  onStop,
 }: BreakSessionProps) {
   const [isOvertime, setIsOvertime] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,16 +36,8 @@ export function BreakSession({
     return () => clearInterval(interval);
   }, [endTime]);
 
-  const handleSkipClick = () => {
-    if (isOvertime) {
-      onSkip("Break finished");
-    } else {
-      setIsModalOpen(true);
-    }
-  };
-
-  const handleConfirmSkip = (reason: string) => {
-    onSkip(reason);
+  const handleConfirmStop = (reason: string) => {
+    onStop(reason);
     setIsModalOpen(false);
   };
 
@@ -74,22 +68,37 @@ export function BreakSession({
         />
       </div>
 
-      {/* Skip Button */}
+      {/* Actions */}
       <div className="pt-8 flex flex-col items-center gap-6">
-        <button
-          onClick={handleSkipClick}
-          disabled={loading}
-          className="group w-full py-6 bg-zinc-900 border border-zinc-800 text-white font-bold uppercase tracking-widest text-sm flex items-center justify-center gap-2 hover:bg-zinc-800 transition-all"
-        >
-          {loading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <>
-              {isOvertime ? "Start Session" : "Skip Break & Focus"}
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </>
-          )}
-        </button>
+        {!isOvertime ? (
+          <>
+            <button
+              onClick={onSkip}
+              disabled={loading}
+              className="group w-full py-6 bg-zinc-900 border border-zinc-800 text-white font-bold uppercase tracking-widest text-sm flex items-center justify-center gap-2 hover:bg-zinc-800 transition-all"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  Skip Break & Focus
+                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              disabled={loading}
+              className="text-[10px] uppercase tracking-[0.2em] transition-colors underline underline-offset-8 disabled:opacity-50 text-zinc-600 hover:text-white"
+            >
+              End Break Entirely (Not Recommended)
+            </button>
+          </>
+        ) : (
+          <p className="text-[10px] uppercase tracking-[0.2em] text-indigo-500 font-bold animate-pulse">
+            Transitioning to session...
+          </p>
+        )}
         
         {!isOvertime && (
           <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-600 font-bold">
@@ -101,7 +110,7 @@ export function BreakSession({
       <ReasonModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onConfirm={handleConfirmSkip}
+        onConfirm={handleConfirmStop}
         loading={loading}
       />
     </div>

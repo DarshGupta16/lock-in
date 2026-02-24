@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { startSession, stopSession, getSessionStatus, startBreak, stopBreak } from "@/lib/hia";
+import { startSession, stopSession, getSessionStatus, startBreak, stopBreak, skipBreak } from "@/lib/hia";
 import { SessionState } from "@/lib/types";
 
 const STORAGE_KEY = "lock-in-session";
@@ -93,6 +93,20 @@ export function useSession() {
             ) {
               return prev;
             }
+
+            // Check if we transitioned from BREAK to FOCUSING
+            if (prev.status === 'BREAK') {
+              // Trigger blocklist sync for the new session
+              fetch('/api/hia', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                  event_type: 'SYNC_BLOCKLIST', 
+                  blocklist: data.blocklist || [] 
+                })
+              }).catch(console.error);
+            }
+
             return {
               status: 'FOCUSING',
               isActive: true,
@@ -258,13 +272,29 @@ export function useSession() {
     [],
   );
 
-  const handleStopBreak = useCallback(async (reason: string = "manual_stop") => {
+  const handleStopBreak = useCallback(async (reason: string) => {
     setLoading(true);
     setError(null);
     try {
-      await stopBreak(reason);
+      await stopBreak(session.blocklist || [], reason);
       // The backend will automatically start a session, syncStatus will pick it up
       // but we can optimistically clear break state
+      setSession((prev) => ({ ...prev, status: 'IDLE' })); 
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to stop break";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [session.blocklist]);
+
+  const handleSkipBreak = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await skipBreak(session.blocklist || []);
+      // The backend will automatically start a session, syncStatus will pick it up
       setSession((prev) => ({ ...prev, status: 'IDLE' })); 
     } catch (err: unknown) {
       const message =
@@ -273,7 +303,7 @@ export function useSession() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [session.blocklist]);
 
   const clearError = useCallback(() => setError(null), []);
 
@@ -286,6 +316,7 @@ export function useSession() {
     handleStop,
     handleStartBreak,
     handleStopBreak,
+    handleSkipBreak,
     clearError,
   };
 }

@@ -95,11 +95,12 @@ export async function startBreak(
   return response.json();
 }
 
-export async function stopBreak(reason: string = "manual_stop") {
+export async function stopBreak(blocklist: string[] = [], reason: string) {
   const payload = {
     event_type: EventType.BREAK_STOP,
     timestamp: new Date().toISOString(),
     reason,
+    blocklist, // Passed for secondary webhook via proxy
   };
 
   const response = await fetch(PROXY_URL, {
@@ -113,6 +114,29 @@ export async function stopBreak(reason: string = "manual_stop") {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.error || `Failed to stop break: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function skipBreak(blocklist: string[] = []) {
+  const payload = {
+    event_type: EventType.BREAK_SKIP,
+    timestamp: new Date().toISOString(),
+    blocklist, // Passed for secondary webhook via proxy
+  };
+
+  const response = await fetch(PROXY_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to skip break: ${response.statusText}`);
   }
 
   return response.json();

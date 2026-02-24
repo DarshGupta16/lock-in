@@ -5,6 +5,7 @@ export enum EventType {
   SESSION_STOP = "SESSION_STOP",
   BREAK_START = "BREAK_START",
   BREAK_STOP = "BREAK_STOP",
+  BREAK_SKIP = "BREAK_SKIP",
 }
 
 export const SessionStartSchema = z.object({
@@ -26,8 +27,14 @@ export const BreakStartSchema = z.object({
   }),
 });
 
+export const BreakSkipSchema = z.object({
+  event_type: z.literal(EventType.BREAK_SKIP),
+  timestamp: z.string().datetime(),
+});
+
 export type SessionStart = z.infer<typeof SessionStartSchema>;
 export type BreakStart = z.infer<typeof BreakStartSchema>;
+export type BreakSkip = z.infer<typeof BreakSkipSchema>;
 
 export interface SessionState {
   status: 'IDLE' | 'FOCUSING' | 'BREAK';
