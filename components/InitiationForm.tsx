@@ -22,6 +22,7 @@ interface InitiationFormProps {
   onRemoveDomain: (domain: string) => void;
   // Actions
   onStart: () => void;
+  onStartBreak: (breakSec: number) => void;
   loading: boolean;
   error: string | null;
 }
@@ -41,10 +42,12 @@ export function InitiationForm({
   onAddDomain,
   onRemoveDomain,
   onStart,
+  onStartBreak,
   loading,
   error,
 }: InitiationFormProps) {
   const [newDomain, setNewDomain] = useState("");
+  const [breakDuration, setBreakDuration] = useState(10); // Default 10 mins
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -141,21 +144,51 @@ export function InitiationForm({
         </div>
       )}
 
-      {/* Start Button */}
-      <button
-        onClick={onStart}
-        disabled={loading || !subject.trim()}
-        className="group w-full py-6 bg-white text-black font-bold uppercase tracking-widest text-sm flex items-center justify-center gap-2 hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-      >
-        {loading ? (
-          <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
-        ) : (
-          <>
-            Commence Session
-            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </>
-        )}
-      </button>
+      {/* Action Buttons */}
+      <div className="space-y-4">
+        {/* Start Button */}
+        <button
+          onClick={onStart}
+          disabled={loading || !subject.trim()}
+          className="group w-full py-6 bg-white text-black font-bold uppercase tracking-widest text-sm flex items-center justify-center gap-2 hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        >
+          {loading ? (
+            <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <>
+              Commence Session
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </>
+          )}
+        </button>
+
+        {/* Break Selector and Button */}
+        <div className="flex gap-2">
+          <div className="flex-1 flex bg-zinc-900 border border-zinc-800">
+            {[5, 10, 15, 20].map((mins) => (
+              <button
+                key={mins}
+                onClick={() => setBreakDuration(mins)}
+                className={`flex-1 py-3 text-[10px] font-bold transition-colors ${
+                  breakDuration === mins 
+                    ? "text-white bg-zinc-800" 
+                    : "text-zinc-500 hover:text-zinc-300"
+                }`}
+              >
+                {mins}m
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => onStartBreak(breakDuration * 60)}
+            disabled={loading || !subject.trim()}
+            className="flex-[2] py-3 border border-zinc-800 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 hover:text-white hover:border-zinc-600 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            Take a Break First
+            <ChevronRight className="w-3 h-3" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

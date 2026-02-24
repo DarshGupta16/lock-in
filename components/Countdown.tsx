@@ -5,11 +5,13 @@ import { useState, useEffect, useRef } from "react";
 interface CountdownProps {
   endTime: string;
   durationSec: number;
+  color?: "white" | "indigo" | "red";
 }
 
 export function Countdown({
   endTime,
   durationSec,
+  color = "white",
 }: CountdownProps) {
   const [timeLeft, setTimeLeft] = useState<number>(0);
 
@@ -37,9 +39,17 @@ export function Countdown({
   const progress =
     durationSec > 0 ? (timeLeft / (durationSec * 1000)) * 100 : 0;
 
+  const colorClasses = {
+    white: "bg-white text-white",
+    indigo: "bg-indigo-500 text-indigo-500",
+    red: "bg-red-500 text-red-500",
+  };
+
+  const currentColor = isOvertime ? "red" : color;
+
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className={`text-6xl sm:text-8xl font-black tracking-tighter tabular-nums ${isOvertime ? 'text-white' : ''}`}>
+      <div className={`text-6xl sm:text-8xl font-black tracking-tighter tabular-nums ${colorClasses[currentColor].split(' ')[1]}`}>
         {isOvertime ? "+" : ""}
         {hours > 0 ? `${hours}:` : ""}
         {minutes.toString().padStart(2, "0")}:
@@ -47,7 +57,7 @@ export function Countdown({
       </div>
       <div className="h-1 w-full bg-zinc-900 rounded-full overflow-hidden">
         <div
-          className="h-full bg-white transition-all duration-1000 ease-linear"
+          className={`h-full transition-all duration-1000 ease-linear ${colorClasses[currentColor].split(' ')[0]}`}
           style={{
             width: `${Math.max(0, Math.min(100, progress))}%`,
           }}
