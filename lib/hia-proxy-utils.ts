@@ -30,12 +30,21 @@ export async function notifySecondaryWebhook(eventType: string, blocklist: strin
 /**
  * Normalizes event types for the secondary webhook to ensure consistent blocking/unblocking behavior.
  */
-export function getWebhookEventForType(eventType: string): { event: string; isStopping: boolean } {
-  if (eventType === "BREAK_SKIP") {
+export function getWebhookEventForType(eventType: string, blocklist: string[] = []): { event: string; isStopping: boolean } {
+  // Handle sync events based on whether the list is empty
+  if (eventType === "SYNC_BLOCKLIST") {
+    const isStopping = !blocklist || blocklist.length === 0;
+    return { 
+      event: isStopping ? "SESSION_STOP" : "SESSION_START", 
+      isStopping 
+    };
+  }
+
+  if (eventType === "BREAK_SKIP" || eventType === "BREAK_STOP") {
     return { event: "SESSION_START", isStopping: false };
   }
   
-  const stoppingEvents = ["BREAK_START", "BREAK_STOP", "SESSION_STOP"];
+  const stoppingEvents = ["BREAK_START", "SESSION_STOP"];
   if (stoppingEvents.includes(eventType)) {
     return { event: "SESSION_STOP", isStopping: true };
   }

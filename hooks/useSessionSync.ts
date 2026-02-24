@@ -94,7 +94,25 @@ export function useSessionSync({ mounted, setSession }: UseSessionSyncProps) {
             };
           });
         } else {
-          setSession((prev) => (prev.status !== 'IDLE' ? { isActive: false, status: 'IDLE' } : prev));
+          setSession((prev) => {
+            if (prev.status !== 'IDLE') {
+              // Session ended automatically (timer expired on backend)
+              // Trigger unblocking for the last active blocklist
+              const lastBlocklist = prev.blocklist || [];
+              Promise.resolve().then(() => {
+                fetch('/api/hia', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ 
+                    event_type: 'SYNC_BLOCKLIST', 
+                    blocklist: lastBlocklist
+                  })
+                }).catch(console.error);
+              });
+              return { isActive: false, status: 'IDLE' };
+            }
+            return prev;
+          });
         }
       } catch (err) {
         errorCount++;

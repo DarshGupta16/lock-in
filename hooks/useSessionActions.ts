@@ -63,7 +63,7 @@ export function useSessionActions({ setSession, setLoading, setError, session }:
     } finally {
       setLoading(false);
     }
-  }, [session.blocklist, setSession, setLoading, setError]);
+  }, [session, setSession, setLoading, setError]);
 
   const handleStartBreak = useCallback(
     async (breakSeconds: number, subject: string, sessionSeconds: number, blocklist: string[]) => {
@@ -113,7 +113,7 @@ export function useSessionActions({ setSession, setLoading, setError, session }:
     } finally {
       setLoading(false);
     }
-  }, [session.blocklist, setSession, setLoading, setError]);
+  }, [session, setSession, setLoading, setError]);
 
   const handleSkipBreak = useCallback(async () => {
     setLoading(true);
@@ -127,7 +127,7 @@ export function useSessionActions({ setSession, setLoading, setError, session }:
     } finally {
       setLoading(false);
     }
-  }, [session.blocklist, setSession, setLoading, setError]);
+  }, [session, setSession, setLoading, setError]);
 
   return {
     handleStart,
