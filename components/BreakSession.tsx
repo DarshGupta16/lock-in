@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Countdown } from "./Countdown";
 import { Coffee, ChevronRight } from "lucide-react";
 import { ReasonModal } from "./ReasonModal";
@@ -24,11 +24,21 @@ export function BreakSession({
 }: BreakSessionProps) {
   const [isOvertime, setIsOvertime] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const hasPlayedRef = useRef(false);
 
   useEffect(() => {
     const target = new Date(endTime).getTime();
     const checkOvertime = () => {
-      setIsOvertime(Date.now() >= target);
+      const now = Date.now();
+      if (now >= target) {
+        setIsOvertime(true);
+        // Play sound only once when transitioning to overtime
+        if (!hasPlayedRef.current) {
+          const audio = new Audio('/alarm.mp3');
+          audio.play().catch(e => console.error("Failed to play alarm:", e));
+          hasPlayedRef.current = true;
+        }
+      }
     };
 
     checkOvertime();

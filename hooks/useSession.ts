@@ -43,7 +43,7 @@ export function useSession() {
   }, [session]);
 
   // Use sub-hooks for sync and actions
-  useSessionSync({ mounted, setSession });
+  useSessionSync({ mounted, setSession, status: session.status });
   
   const actions = useSessionActions({ 
     setSession, 

@@ -5,16 +5,18 @@ import { SessionState } from "@/lib/types";
 interface UseSessionSyncProps {
   mounted: boolean;
   setSession: (updater: (prev: SessionState) => SessionState) => void;
+  status: SessionState['status'];
 }
 
-export function useSessionSync({ mounted, setSession }: UseSessionSyncProps) {
+export function useSessionSync({ mounted, setSession, status }: UseSessionSyncProps) {
   useEffect(() => {
     if (!mounted) return;
 
     let errorCount = 0;
 
     const syncStatus = async () => {
-      if (document.hidden) return;
+      // Allow syncing if hidden only if we are currently in a BREAK state
+      if (document.hidden && status !== 'BREAK') return;
 
       try {
         const data = await getSessionStatus();
@@ -130,5 +132,5 @@ export function useSessionSync({ mounted, setSession }: UseSessionSyncProps) {
       clearInterval(interval);
       document.removeEventListener("visibilitychange", syncStatus);
     };
-  }, [mounted, setSession]);
+  }, [mounted, setSession, status]);
 }
